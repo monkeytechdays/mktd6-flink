@@ -130,7 +130,43 @@ public class Chapter01_LinearStatelessAnalysis extends EmbeddedClustersBoilerpla
         // filter to eliminate useless sentiments
         // flatMap to convert to influencing characters
 
-        return null;
+        return source
+                .filter(new FilterMKTD6BananaCoins())
+                .map(new GibbSentimentAnalysis())
+                .filter(new FilterSentimentNotNeutral())
+                .flatMap(new InfluencingCharsMapper());
+    }
+
+    private static class FilterMKTD6BananaCoins implements FilterFunction<Tuple2<String, Gibb>> {
+        @Override
+        public boolean filter(Tuple2<String, Gibb> kv) throws Exception {
+            Gibb gibb = kv.f1;
+            return gibb.getText().contains("#mktd6")
+                    && gibb.getText().contains("#bananacoins");
+        }
+    }
+
+    private class GibbSentimentAnalysis implements MapFunction<Tuple2<String, Gibb>, Tuple2<Sentiment, String>> {
+        @Override
+        public Tuple2<Sentiment, String> map(Tuple2<String, Gibb> kv) throws Exception {
+            return gibbAnalysis(kv.f1);
+        }
+    }
+
+    private static class FilterSentimentNotNeutral implements FilterFunction<Tuple2<Sentiment, String>> {
+        @Override
+        public boolean filter(Tuple2<Sentiment, String> kv) throws Exception {
+            return kv.f0 != Sentiment.NEUTRAL;
+        }
+    }
+
+    private class InfluencingCharsMapper implements FlatMapFunction<Tuple2<Sentiment, String>, Tuple2<String, String>> {
+        @Override
+        public void flatMap(Tuple2<Sentiment, String> t, Collector<Tuple2<String, String>> out) throws Exception {
+            influencingChars(t.f0, t.f1)
+                    .map(s -> Tuple2.of("", s.name()))
+                    .forEach(out::collect);
+        }
     }
 
     //==========================================================================

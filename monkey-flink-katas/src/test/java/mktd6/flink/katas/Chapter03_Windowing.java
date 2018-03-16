@@ -122,7 +122,20 @@ public class Chapter03_Windowing extends EmbeddedClustersBoilerplate<String, Inv
         // reduce the grouped events using the combineInvestments
 
         // <<< Your job ends here.
-        return null;
+        return source
+                .keyBy(0)
+                .timeWindow(Time.milliseconds(TIME_WINDOW_MILLIS))
+                .reduce(new ReduceInvestmentSum());
+    }
+
+    private static class ReduceInvestmentSum implements ReduceFunction<Tuple2<String, Investment>> {
+        @Override
+        public Tuple2<String, Investment> reduce(Tuple2<String, Investment> value1, Tuple2<String, Investment> value2) throws Exception {
+            return Tuple2.of(value1.f0, Investment.make(
+                    value1.f1.getTxnId(),
+                    value1.f1.getInvested() + value2.f1.getInvested()
+            ));
+        }
     }
 
     //==========================================================================

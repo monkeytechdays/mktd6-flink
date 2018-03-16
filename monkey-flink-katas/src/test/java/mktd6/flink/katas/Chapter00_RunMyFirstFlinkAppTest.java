@@ -113,9 +113,16 @@ public class Chapter00_RunMyFirstFlinkAppTest extends EmbeddedClustersBoilerplat
                         really the topic of the day.
             ====*/
 
-        return null;
+        return source.map(new BuyOrSell());
     }
 
+    private static class BuyOrSell implements MapFunction<Tuple2<String, SharePriceInfo>, Tuple2<String, String>> {
+        @Override
+        public Tuple2<String, String> map(Tuple2<String, SharePriceInfo> price) throws Exception {
+            return Tuple2.of("",
+                    price.f1.getForecast().getMult() > 1 ? "BUY" : "SELL");
+        }
+    }
 
     //==========================================================================
     //==== TEST LOGIC

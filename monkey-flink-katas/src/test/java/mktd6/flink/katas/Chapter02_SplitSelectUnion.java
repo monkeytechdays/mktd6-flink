@@ -171,8 +171,63 @@ public class Chapter02_SplitSelectUnion extends EmbeddedClustersBoilerplate<Stri
         // send to the VALID_ORDERS topic
 
         // <<< Your job ends here.
+        SplitStream<Either<String, Tuple2<String, MarketOrder>>> branches = source
+                .map(new ParseOrderOrInvalid())
+                .split(new OrderSelector());
 
-        return null;
+        branches.select("invalid")
+                .map(new MapInvalidToString())
+                .addSink(new FlinkKafkaProducer011<>(
+                        brokerConnectionStrings,
+                        INVALID_ORDERS.getTopicName(),
+                        new JsonSchema<>(String.class, String.class)
+                ));
+
+        return branches.select("buy")
+                .map(new MapValidToString())
+                .filter(order -> !tooManySharesInOrder(order))
+                .union(branches.select("sell")
+                        .map(new MapValidToString()))
+                ;
+    }
+
+    private static class ParseOrderOrInvalid implements MapFunction<Tuple2<String,String>, Either<String, Tuple2<String, MarketOrder>>> {
+        @Override
+        public Either<String, Tuple2<String, MarketOrder>> map(Tuple2<String, String> value) throws Exception {
+            return parseOrder(value.f1);
+        }
+    }
+
+    private static class OrderSelector implements OutputSelector<Either<String, Tuple2<String, MarketOrder>>> {
+        @Override
+        public Iterable<String> select(Either<String, Tuple2<String, MarketOrder>> value) {
+            List<String> outputNames = new ArrayList<>();
+            if (value.isLeft()) {
+                outputNames.add("invalid");
+            } else {
+                MarketOrder order = value.right().f1;
+                if (order.getType() == MarketOrderType.BUY) {
+                    outputNames.add("buy");
+                } else if (order.getType() == MarketOrderType.SELL) {
+                    outputNames.add("sell");
+                }
+            }
+            return outputNames;
+        }
+    }
+
+    private static class MapInvalidToString implements MapFunction<Either<String,Tuple2<String,MarketOrder>>, Tuple2<String, String>> {
+        @Override
+        public Tuple2<String, String> map(Either<String, Tuple2<String, MarketOrder>> value) throws Exception {
+            return Tuple2.of("", value.left());
+        }
+    }
+
+    private static class MapValidToString implements MapFunction<Either<String,Tuple2<String,MarketOrder>>, Tuple2<String, MarketOrder>> {
+        @Override
+        public Tuple2<String, MarketOrder> map(Either<String, Tuple2<String, MarketOrder>> value) throws Exception {
+            return Tuple2.of(value.right().f0, value.right().f1);
+        }
     }
 
 

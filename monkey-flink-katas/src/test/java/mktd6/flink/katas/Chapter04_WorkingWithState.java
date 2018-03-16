@@ -79,9 +79,38 @@ public class Chapter04_WorkingWithState extends EmbeddedClustersBoilerplate<Stri
         // collect the EMA values to the PRICE_EMA topic
 
         // <<< Your job ends here.
-        return null;
+        return source
+                .keyBy(0)
+                .flatMap(new EMATransformer());
     }
+    private class EMATransformer extends RichFlatMapFunction<Tuple2<String, SharePriceInfo>, Tuple2<String, Double>> {
 
+        private ValueState<Double> emaState;
+
+        @Override
+        public void flatMap(Tuple2<String, SharePriceInfo> value, Collector<Tuple2<String, Double>> out) throws Exception {
+            Double currentEma = emaState.value();
+
+            currentEma = computeEma(currentEma, value.f1);
+
+            emaState.update(currentEma);
+
+            out.collect(Tuple2.of(EMA_STATE_KEY, currentEma));
+        }
+
+        @Override
+        public void open(Configuration config) {
+            // obtain key-value state for prediction model
+            ValueStateDescriptor<Double> descriptor =
+                    new ValueStateDescriptor<>(
+                            // state name
+                            EMA_STATE_NAME,
+                            // type information of state
+                            BasicTypeInfo.DOUBLE_TYPE_INFO
+                    );
+            emaState = getRuntimeContext().getState(descriptor);
+        }
+    }
 
     //==========================================================================
     //==== TEST LOGIC
