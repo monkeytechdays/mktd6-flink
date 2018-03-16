@@ -45,8 +45,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
+import static mktd6.flink.LaunchHelper.getLocalIp;
+
 public class MarketDataflow {
     private static final Logger LOG = LoggerFactory.getLogger(MarketDataflow.class);
+
+    public static final String KAFKA_HOST = getLocalIp();
+    public static final String KAFKA_PORT = "9092";
 
 
     public static void main(String[] args) throws Exception {
@@ -60,7 +65,7 @@ public class MarketDataflow {
                 ) {
             bootstrapServers = params.get("bootstrap-servers");
         } else {
-            bootstrapServers = "localhost:9092";
+            bootstrapServers = KAFKA_HOST + ":" + KAFKA_PORT;
         }
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();

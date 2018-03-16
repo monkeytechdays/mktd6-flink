@@ -28,8 +28,13 @@ import java.io.Serializable;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
+import static mktd6.flink.LaunchHelper.getLocalIp;
+
 public class Gibber {
     private static final Logger LOG = LoggerFactory.getLogger(Gibber.class);
+
+    public static final String KAFKA_HOST = getLocalIp();
+    public static final String KAFKA_PORT = "9092";
 
     private static final String BOOTSTRAP_SERVERS =
             System.getenv("BOOTSTRAP_SERVERS");
@@ -74,7 +79,8 @@ public class Gibber {
             twitterProps.setProperty(TwitterSource.CONSUMER_SECRET, TWITTER_CONSUMER_SECRET);
             twitterProps.setProperty(TwitterSource.TOKEN, TWITTER_ACCESS_TOKEN);
             twitterProps.setProperty(TwitterSource.TOKEN_SECRET, TWITTER_ACCESS_TOKEN_SECRET);
-            bootstrapServers = Strings.isNullOrEmpty(BOOTSTRAP_SERVERS) ? "localhost:9092" : BOOTSTRAP_SERVERS;
+            bootstrapServers = Strings.isNullOrEmpty(BOOTSTRAP_SERVERS) ?
+                    KAFKA_HOST + ":" + KAFKA_PORT : BOOTSTRAP_SERVERS;
         }
 
         TwitterSource twitterSource = new TwitterSource(twitterProps);

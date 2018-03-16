@@ -37,9 +37,15 @@ import org.slf4j.LoggerFactory;
 import java.util.Properties;
 import java.util.UUID;
 
+import static mktd6.flink.LaunchHelper.getLocalIp;
+
+//TODO Does not work, not finished
 public class MonkeyStockTrader {
 
     private static final Logger LOG = LoggerFactory.getLogger(MonkeyStockTrader.class);
+
+    public static final String KAFKA_HOST = getLocalIp();
+    public static final String KAFKA_PORT = "9092";
 
     public static void main(String[] args) throws Exception {
 
@@ -60,7 +66,7 @@ public class MonkeyStockTrader {
         } else {
             team = Team.ALOUATE;
             name = "dummy";
-            bootstrapServers = "localhost:9092";
+            bootstrapServers = KAFKA_HOST + ":" + KAFKA_PORT;
         }
 
         final Trader trader = new Trader(team, name);
