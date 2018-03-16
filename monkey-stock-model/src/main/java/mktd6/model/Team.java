@@ -5,6 +5,7 @@ public enum Team {
     ALOUATE,
     BONOBO,
     CAPUCIN,
-    DRILL;
+    DRILL,
+    SAGOUIN
 
 }
